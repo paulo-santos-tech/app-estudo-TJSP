@@ -25,6 +25,14 @@ export function initSPenCanvas({ onAutoAnalyze }) {
     resizeTimer = setTimeout(resizeCanvas, 80);
   });
 
+  if (typeof ResizeObserver !== 'undefined' && wrapper) {
+    const ro = new ResizeObserver(() => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resizeCanvas, 40);
+    });
+    ro.observe(wrapper);
+  }
+
   // Evita menu de contexto no tablet ao segurar o botão da S Pen ou toque longo
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 

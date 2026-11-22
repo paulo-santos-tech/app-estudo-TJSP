@@ -1,8 +1,7 @@
-const CACHE_NAME = 'tjsp2027-caderno-v4';
+const CACHE_NAME = 'tjsp2027-caderno-v5';
 
 const APP_SHELL_ASSETS = [
   './',
-  './index.html',
   './manifest.webmanifest',
   './css/styles.css',
   './icons/icon-192.png',
@@ -27,7 +26,24 @@ const APP_SHELL_ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL_ASSETS))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Faz cache individualmente para evitar que um redirecionamento aborte toda a instalação do PWA
+      await Promise.allSettled(
+        APP_SHELL_ASSETS.map(async (url) => {
+          const res = await fetch(url, { cache: 'reload' });
+          if (res.ok && !res.redirected) {
+            await cache.put(url, res);
+          } else if (res.ok && res.redirected) {
+            const cleanBody = await res.blob();
+            await cache.put(url, new Response(cleanBody, {
+              status: res.status,
+              statusText: res.statusText,
+              headers: res.headers
+            }));
+          }
+        })
+      );
+    })
   );
   self.skipWaiting();
 });
@@ -56,13 +72,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Para assets locais: Cache-First com atualização em segundo plano
+  // Navegação de página (HTML principal)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res && res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('./', clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match('./'))
+    );
+    return;
+  }
+
+  // Assets locais: Cache-First com atualização em segundo plano
   if (url.origin === self.location.origin) {
     event.respondWith(
       caches.match(request).then((cached) => {
         const networkFetch = fetch(request)
           .then((response) => {
-            if (response && response.ok) {
+            if (response && response.ok && !response.redirected) {
               const clone = response.clone();
               caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
             }
@@ -76,7 +108,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Para CDNs (Tailwind, Google Fonts): Network-First com fallback para Cache
+  // CDNs (Tailwind, Google Fonts): Network-First com fallback para Cache
   event.respondWith(
     fetch(request)
       .then((response) => {

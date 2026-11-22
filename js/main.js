@@ -288,4 +288,8 @@ async function bootstrapApp() {
   registerServiceWorkerAndPWA();
 }
 
-window.addEventListener('DOMContentLoaded', bootstrapApp);
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', bootstrapApp);
+} else {
+  bootstrapApp();
+}

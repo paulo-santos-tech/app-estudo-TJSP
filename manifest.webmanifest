@@ -1,8 +1,9 @@
 {
+  "id": "./",
   "name": "TJSP 2027 - Caderno Inteligente S Pen",
   "short_name": "Caderno TJSP",
   "description": "Caderno inteligente com S Pen, aulas por histórias, redação guiada Vunesp e calculadora manuscrita com IA Gemini.",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -14,13 +15,19 @@
       "src": "./icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "./icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

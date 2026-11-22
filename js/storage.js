@@ -34,7 +34,17 @@ function openDB() {
         db.createObjectStore(STORE_SOURCES, { keyPath: 'id' });
       }
     };
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      const db = req.result;
+      db.onversionchange = () => {
+        db.close();
+        dbPromise = null;
+      };
+      resolve(db);
+    };
+    req.onblocked = () => {
+      reject(new Error('IndexedDB bloqueado por outra aba'));
+    };
     req.onerror = () => reject(req.error);
   });
   return dbPromise;
