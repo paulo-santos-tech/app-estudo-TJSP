@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tjsp2027-caderno-v7';
+const CACHE_NAME = 'tjsp2027-caderno-v8';
 
 const APP_SHELL_ASSETS = [
   './',

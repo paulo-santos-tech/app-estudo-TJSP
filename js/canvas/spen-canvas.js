@@ -9,16 +9,21 @@ let onAutoAnalyzeCallback = null;
 let resizeTimer = null;
 let draftSaveTimer = null;
 
+// Cache de layout para evitar reflow síncrono durante a escrita rápida da S Pen (240Hz)
+let cachedRect = null;
+let cachedDpr = 1;
+
 // Rastreamento de 2 dedos para Zoom (pinça) e Pan no tablet
 const touchPointers = new Map();
 let lastPinchDist = null;
 let lastPinchCenter = null;
 
-const MIN_POINT_DIST_SQ = 1.44; // ~1.2px: reduz excesso de pontos 240Hz sem perder suavidade
+const MIN_POINT_DIST_SQ = 1.0;
 
 export function initSPenCanvas({ onAutoAnalyze }) {
   canvas = document.getElementById('spen-canvas');
-  ctx = canvas.getContext('2d', { desynchronized: true });
+  // Sem desynchronized:true para evitar fundo preto/escuro no Android e manter papel visível
+  ctx = canvas.getContext('2d');
   wrapper = document.getElementById('canvas-wrapper');
   onAutoAnalyzeCallback = onAutoAnalyze;
 
@@ -35,19 +40,16 @@ export function initSPenCanvas({ onAutoAnalyze }) {
     ro.observe(wrapper);
   }
 
-  // Evita menu de contexto no tablet ao segurar o botão da S Pen ou toque longo
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-
   canvas.addEventListener('pointerdown', handlePointerDown);
   canvas.addEventListener('pointermove', handlePointerMove);
   canvas.addEventListener('pointerup', handlePointerUpOrCancel);
   canvas.addEventListener('pointercancel', handlePointerUpOrCancel);
 
-  // Zoom com roda do mouse + Ctrl no PC
   canvas.addEventListener('wheel', (e) => {
     if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
+    const rect = cachedRect || canvas.getBoundingClientRect();
     const cx = e.clientX - rect.left;
     const cy = e.clientY - rect.top;
     const factor = e.deltaY < 0 ? 1.1 : 0.9;
@@ -59,8 +61,10 @@ export function initSPenCanvas({ onAutoAnalyze }) {
   updateZoomIndicatorUI();
 }
 
-function getCanvasDPR() {
-  return Math.min(window.devicePixelRatio || 1, 2);
+function updateCachedMetrics() {
+  if (!canvas) return;
+  cachedRect = canvas.getBoundingClientRect();
+  cachedDpr = Math.min(window.devicePixelRatio || 1, 2);
 }
 
 export function resizeCanvas() {
@@ -68,9 +72,11 @@ export function resizeCanvas() {
   const rect = wrapper.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) return;
 
-  const dpr = getCanvasDPR();
-  const nextW = Math.round(rect.width * dpr);
-  const nextH = Math.round(rect.height * dpr);
+  cachedDpr = Math.min(window.devicePixelRatio || 1, 2);
+  const nextW = Math.round(rect.width * cachedDpr);
+  const nextH = Math.round(rect.height * cachedDpr);
+  cachedRect = rect;
+
   if (canvas.width === nextW && canvas.height === nextH) return;
 
   canvas.width = nextW;
@@ -78,9 +84,9 @@ export function resizeCanvas() {
   redrawAllStrokes();
 }
 
-function screenToWorld(clientX, clientY, rect) {
-  const sx = clientX - rect.left;
-  const sy = clientY - rect.top;
+function screenToWorldFast(clientX, clientY) {
+  const sx = clientX - cachedRect.left;
+  const sy = clientY - cachedRect.top;
   return {
     x: (sx - state.panX) / state.zoom,
     y: (sy - state.panY) / state.zoom
@@ -130,14 +136,14 @@ function getPinchMetrics() {
 }
 
 function handlePointerDown(e) {
+  updateCachedMetrics();
+
   if (e.pointerType === 'touch') {
-    const rect = canvas.getBoundingClientRect();
     touchPointers.set(e.pointerId, {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: e.clientX - cachedRect.left,
+      y: e.clientY - cachedRect.top
     });
 
-    // 2 dedos = Pinça (Zoom + Pan), mesmo com Rejeição de Palma ativa
     if (touchPointers.size === 2) {
       if (state.isDrawing) {
         state.isDrawing = false;
@@ -165,14 +171,12 @@ function handlePointerDown(e) {
     // Ignora se não suportado
   }
 
-  // Botão lateral da S Pen (barrel button) ou borracha traseira
   const isBarrelEraser =
     e.pointerType === 'pen' &&
     (e.buttons === 32 || e.buttons === 2 || e.button === 5 || e.button === 2);
   const effectiveTool = isBarrelEraser ? 'eraser' : state.tool;
 
-  const rect = canvas.getBoundingClientRect();
-  const { x, y } = screenToWorld(e.clientX, e.clientY, rect);
+  const { x, y } = screenToWorldFast(e.clientX, e.clientY);
   const pressure = e.pointerType === 'pen' ? (e.pressure > 0 ? e.pressure : 0.5) : 0.5;
 
   state.isDrawing = true;
@@ -189,11 +193,12 @@ function handlePointerDown(e) {
 }
 
 function handlePointerMove(e) {
+  if (!cachedRect) updateCachedMetrics();
+
   if (e.pointerType === 'touch' && touchPointers.has(e.pointerId)) {
-    const rect = canvas.getBoundingClientRect();
     touchPointers.set(e.pointerId, {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: e.clientX - cachedRect.left,
+      y: e.clientY - cachedRect.top
     });
 
     if (touchPointers.size >= 2) {
@@ -214,13 +219,13 @@ function handlePointerMove(e) {
   if (state.palmRejectionOnlyPen && e.pointerType === 'touch') return;
 
   e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
   const pts = state.currentStroke.points;
   const startIdx = pts.length;
   const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
 
-  for (const ev of events) {
-    const { x, y } = screenToWorld(ev.clientX, ev.clientY, rect);
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
+    const { x, y } = screenToWorldFast(ev.clientX, ev.clientY);
     const last = pts[pts.length - 1];
     const dx = x - last.x;
     const dy = y - last.y;
@@ -231,7 +236,7 @@ function handlePointerMove(e) {
   }
 
   if (pts.length > startIdx) {
-    drawSegmentsFrom(state.currentStroke, startIdx);
+    drawSegmentsBatched(state.currentStroke, startIdx);
   }
 }
 
@@ -253,7 +258,6 @@ function finishStroke() {
     state.strokes.push(state.currentStroke);
   }
   state.currentStroke = null;
-  // Não redesenha todos os traços ao levantar a S Pen (elimina travamento!)
   scheduleDraftSave();
 
   const autoToggle = document.getElementById('auto-analyze-toggle');
@@ -280,14 +284,13 @@ function scheduleDraftSave() {
 }
 
 function applyCanvasTransform(targetCtx) {
-  const dpr = getCanvasDPR();
   targetCtx.setTransform(
-    dpr * state.zoom,
+    cachedDpr * state.zoom,
     0,
     0,
-    dpr * state.zoom,
-    dpr * state.panX,
-    dpr * state.panY
+    cachedDpr * state.zoom,
+    cachedDpr * state.panX,
+    cachedDpr * state.panY
   );
 }
 
@@ -310,7 +313,10 @@ function drawSinglePoint(stroke) {
   ctx.restore();
 }
 
-function drawSegmentsFrom(stroke, startIdx) {
+/**
+ * Desenha todos os pontos coalescidos do frame em UMA única chamada GPU (sem lag)
+ */
+function drawSegmentsBatched(stroke, startIdx) {
   const pts = stroke.points;
   if (pts.length < 2) return;
 
@@ -323,35 +329,23 @@ function drawSegmentsFrom(stroke, startIdx) {
     ctx.globalCompositeOperation = 'destination-out';
     ctx.strokeStyle = 'rgba(0,0,0,1)';
     ctx.lineWidth = stroke.baseWidth * 7;
-    ctx.beginPath();
-    ctx.moveTo(pts[startIdx - 1].x, pts[startIdx - 1].y);
-    for (let i = startIdx; i < pts.length; i++) {
-      ctx.lineTo(pts[i].x, pts[i].y);
-    }
-    ctx.stroke();
   } else if (stroke.tool === 'highlighter') {
     ctx.globalCompositeOperation = 'source-over';
     ctx.strokeStyle = stroke.color;
     ctx.lineWidth = stroke.baseWidth * 6;
-    ctx.beginPath();
-    ctx.moveTo(pts[startIdx - 1].x, pts[startIdx - 1].y);
-    for (let i = startIdx; i < pts.length; i++) {
-      ctx.lineTo(pts[i].x, pts[i].y);
-    }
-    ctx.stroke();
   } else {
     ctx.globalCompositeOperation = 'source-over';
     ctx.strokeStyle = stroke.color;
-    for (let i = startIdx; i < pts.length; i++) {
-      const p1 = pts[i - 1];
-      const p2 = pts[i];
-      ctx.lineWidth = stroke.baseWidth * (0.45 + p2.pressure * 1.15);
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.stroke();
-    }
+    const pLast = pts[pts.length - 1];
+    ctx.lineWidth = stroke.baseWidth * (0.45 + pLast.pressure * 1.15);
   }
+
+  ctx.beginPath();
+  ctx.moveTo(pts[startIdx - 1].x, pts[startIdx - 1].y);
+  for (let i = startIdx; i < pts.length; i++) {
+    ctx.lineTo(pts[i].x, pts[i].y);
+  }
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -439,7 +433,7 @@ export function renderStrokesToDataURL(strokes, maxDimension = 1600) {
   const rect = wrapper.getBoundingClientRect();
   const logicalW = Math.max(1, rect.width || 800);
   const logicalH = Math.max(1, rect.height || 600);
-  const dpr = getCanvasDPR();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const rawW = logicalW * dpr;
   const rawH = logicalH * dpr;
   const scaleDown = Math.min(1, maxDimension / Math.max(rawW, rawH));
@@ -577,10 +571,10 @@ export function applyPalmRejectionUI() {
   if (!btn || !label) return;
 
   if (state.palmRejectionOnlyPen) {
-    btn.className = 'px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/60 dark:border-blue-800 dark:text-blue-300';
+    btn.className = 'px-2 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1 shrink-0 bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/60 dark:border-blue-800 dark:text-blue-300';
     label.textContent = 'Somente S Pen';
   } else {
-    btn.className = 'px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 bg-slate-100 border-slate-300 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300';
+    btn.className = 'px-2 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1 shrink-0 bg-slate-100 border-slate-300 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300';
     label.textContent = 'Caneta + Dedo';
   }
 }

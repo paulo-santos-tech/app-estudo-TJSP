@@ -15,6 +15,7 @@ body {
 }
 
 /* Bloqueia gestos do navegador e menu de contexto na lousa da S Pen */
+#canvas-wrapper,
 #spen-canvas {
   touch-action: none;
   cursor: crosshair;
