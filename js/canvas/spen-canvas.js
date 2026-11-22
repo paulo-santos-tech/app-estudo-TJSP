@@ -14,6 +14,8 @@ const touchPointers = new Map();
 let lastPinchDist = null;
 let lastPinchCenter = null;
 
+const MIN_POINT_DIST_SQ = 1.44; // ~1.2px: reduz excesso de pontos 240Hz sem perder suavidade
+
 export function initSPenCanvas({ onAutoAnalyze }) {
   canvas = document.getElementById('spen-canvas');
   ctx = canvas.getContext('2d', { desynchronized: true });
@@ -57,19 +59,26 @@ export function initSPenCanvas({ onAutoAnalyze }) {
   updateZoomIndicatorUI();
 }
 
+function getCanvasDPR() {
+  return Math.min(window.devicePixelRatio || 1, 2);
+}
+
 export function resizeCanvas() {
   if (!wrapper || !canvas || !ctx) return;
   const rect = wrapper.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) return;
 
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.round(rect.width * dpr);
-  canvas.height = Math.round(rect.height * dpr);
+  const dpr = getCanvasDPR();
+  const nextW = Math.round(rect.width * dpr);
+  const nextH = Math.round(rect.height * dpr);
+  if (canvas.width === nextW && canvas.height === nextH) return;
+
+  canvas.width = nextW;
+  canvas.height = nextH;
   redrawAllStrokes();
 }
 
-function screenToWorld(clientX, clientY) {
-  const rect = canvas.getBoundingClientRect();
+function screenToWorld(clientX, clientY, rect) {
   const sx = clientX - rect.left;
   const sy = clientY - rect.top;
   return {
@@ -113,10 +122,8 @@ function getPinchMetrics() {
   const pts = Array.from(touchPointers.values());
   if (pts.length < 2) return null;
   const [p1, p2] = pts;
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
   return {
-    dist: Math.hypot(dx, dy),
+    dist: Math.hypot(p2.x - p1.x, p2.y - p1.y),
     cx: (p1.x + p2.x) / 2,
     cy: (p1.y + p2.y) / 2
   };
@@ -149,6 +156,9 @@ function handlePointerDown(e) {
   }
 
   e.preventDefault();
+  clearTimeout(draftSaveTimer);
+  clearAutoAnalyzeTimer();
+
   try {
     canvas.setPointerCapture(e.pointerId);
   } catch {
@@ -161,7 +171,8 @@ function handlePointerDown(e) {
     (e.buttons === 32 || e.buttons === 2 || e.button === 5 || e.button === 2);
   const effectiveTool = isBarrelEraser ? 'eraser' : state.tool;
 
-  const { x, y } = screenToWorld(e.clientX, e.clientY);
+  const rect = canvas.getBoundingClientRect();
+  const { x, y } = screenToWorld(e.clientX, e.clientY, rect);
   const pressure = e.pointerType === 'pen' ? (e.pressure > 0 ? e.pressure : 0.5) : 0.5;
 
   state.isDrawing = true;
@@ -175,7 +186,6 @@ function handlePointerDown(e) {
 
   drawSinglePoint(state.currentStroke);
   document.getElementById('canvas-placeholder')?.classList.add('hidden');
-  clearAutoAnalyzeTimer();
 }
 
 function handlePointerMove(e) {
@@ -190,12 +200,9 @@ function handlePointerMove(e) {
       e.preventDefault();
       const m = getPinchMetrics();
       if (m && lastPinchDist && lastPinchCenter) {
-        const dx = m.cx - lastPinchCenter.x;
-        const dy = m.cy - lastPinchCenter.y;
-        state.panX += dx;
-        state.panY += dy;
-        const scaleFactor = m.dist / lastPinchDist;
-        applyZoomAtPoint(state.zoom * scaleFactor, m.cx, m.cy);
+        state.panX += m.cx - lastPinchCenter.x;
+        state.panY += m.cy - lastPinchCenter.y;
+        applyZoomAtPoint(state.zoom * (m.dist / lastPinchDist), m.cx, m.cy);
         lastPinchDist = m.dist;
         lastPinchCenter = { x: m.cx, y: m.cy };
       }
@@ -207,13 +214,25 @@ function handlePointerMove(e) {
   if (state.palmRejectionOnlyPen && e.pointerType === 'touch') return;
 
   e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const pts = state.currentStroke.points;
+  const startIdx = pts.length;
   const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+
   for (const ev of events) {
-    const { x, y } = screenToWorld(ev.clientX, ev.clientY);
+    const { x, y } = screenToWorld(ev.clientX, ev.clientY, rect);
+    const last = pts[pts.length - 1];
+    const dx = x - last.x;
+    const dy = y - last.y;
+    if (dx * dx + dy * dy < MIN_POINT_DIST_SQ) continue;
+
     const pressure = ev.pointerType === 'pen' ? (ev.pressure > 0 ? ev.pressure : 0.5) : 0.5;
-    state.currentStroke.points.push({ x, y, pressure });
+    pts.push({ x, y, pressure });
   }
-  drawLatestSegment(state.currentStroke);
+
+  if (pts.length > startIdx) {
+    drawSegmentsFrom(state.currentStroke, startIdx);
+  }
 }
 
 function handlePointerUpOrCancel(e) {
@@ -234,7 +253,7 @@ function finishStroke() {
     state.strokes.push(state.currentStroke);
   }
   state.currentStroke = null;
-  redrawAllStrokes();
+  // Não redesenha todos os traços ao levantar a S Pen (elimina travamento!)
   scheduleDraftSave();
 
   const autoToggle = document.getElementById('auto-analyze-toggle');
@@ -257,11 +276,11 @@ function scheduleDraftSave() {
   clearTimeout(draftSaveTimer);
   draftSaveTimer = setTimeout(() => {
     saveCanvasDraft(state.pages, state.currentPageIdx);
-  }, 400);
+  }, 2000);
 }
 
 function applyCanvasTransform(targetCtx) {
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = getCanvasDPR();
   targetCtx.setTransform(
     dpr * state.zoom,
     0,
@@ -291,11 +310,9 @@ function drawSinglePoint(stroke) {
   ctx.restore();
 }
 
-function drawLatestSegment(stroke) {
+function drawSegmentsFrom(stroke, startIdx) {
   const pts = stroke.points;
   if (pts.length < 2) return;
-  const p1 = pts[pts.length - 2];
-  const p2 = pts[pts.length - 1];
 
   ctx.save();
   applyCanvasTransform(ctx);
@@ -306,20 +323,35 @@ function drawLatestSegment(stroke) {
     ctx.globalCompositeOperation = 'destination-out';
     ctx.strokeStyle = 'rgba(0,0,0,1)';
     ctx.lineWidth = stroke.baseWidth * 7;
+    ctx.beginPath();
+    ctx.moveTo(pts[startIdx - 1].x, pts[startIdx - 1].y);
+    for (let i = startIdx; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.stroke();
   } else if (stroke.tool === 'highlighter') {
     ctx.globalCompositeOperation = 'source-over';
     ctx.strokeStyle = stroke.color;
     ctx.lineWidth = stroke.baseWidth * 6;
+    ctx.beginPath();
+    ctx.moveTo(pts[startIdx - 1].x, pts[startIdx - 1].y);
+    for (let i = startIdx; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.stroke();
   } else {
     ctx.globalCompositeOperation = 'source-over';
     ctx.strokeStyle = stroke.color;
-    ctx.lineWidth = stroke.baseWidth * (0.45 + p2.pressure * 1.15);
+    for (let i = startIdx; i < pts.length; i++) {
+      const p1 = pts[i - 1];
+      const p2 = pts[i];
+      ctx.lineWidth = stroke.baseWidth * (0.45 + p2.pressure * 1.15);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+    }
   }
-
-  ctx.beginPath();
-  ctx.moveTo(p1.x, p1.y);
-  ctx.lineTo(p2.x, p2.y);
-  ctx.stroke();
   ctx.restore();
 }
 
@@ -364,8 +396,8 @@ function renderStrokesToContext(targetCtx, strokes, { isExport = false } = {}) {
       const r = stroke.tool === 'eraser' ? stroke.baseWidth * 3.5 : stroke.baseWidth * 0.6;
       targetCtx.arc(pts[0].x, pts[0].y, r, 0, Math.PI * 2);
       targetCtx.fill();
-    } else if (stroke.tool === 'highlighter' && isExport) {
-      targetCtx.lineWidth = stroke.baseWidth * 6;
+    } else if (stroke.tool === 'highlighter' || stroke.tool === 'eraser') {
+      targetCtx.lineWidth = stroke.tool === 'eraser' ? stroke.baseWidth * 7 : stroke.baseWidth * 6;
       targetCtx.beginPath();
       targetCtx.moveTo(pts[0].x, pts[0].y);
       for (let i = 1; i < pts.length; i++) {
@@ -376,13 +408,7 @@ function renderStrokesToContext(targetCtx, strokes, { isExport = false } = {}) {
       for (let i = 1; i < pts.length; i++) {
         const p1 = pts[i - 1];
         const p2 = pts[i];
-        if (stroke.tool === 'eraser') {
-          targetCtx.lineWidth = stroke.baseWidth * 7;
-        } else if (stroke.tool === 'highlighter') {
-          targetCtx.lineWidth = stroke.baseWidth * 6;
-        } else {
-          targetCtx.lineWidth = stroke.baseWidth * (0.45 + p2.pressure * 1.15);
-        }
+        targetCtx.lineWidth = stroke.baseWidth * (0.45 + p2.pressure * 1.15);
         targetCtx.beginPath();
         targetCtx.moveTo(p1.x, p1.y);
         targetCtx.lineTo(p2.x, p2.y);
@@ -413,7 +439,7 @@ export function renderStrokesToDataURL(strokes, maxDimension = 1600) {
   const rect = wrapper.getBoundingClientRect();
   const logicalW = Math.max(1, rect.width || 800);
   const logicalH = Math.max(1, rect.height || 600);
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = getCanvasDPR();
   const rawW = logicalW * dpr;
   const rawH = logicalH * dpr;
   const scaleDown = Math.min(1, maxDimension / Math.max(rawW, rawH));
@@ -436,9 +462,6 @@ export function exportCanvasAsDataURL(maxDimension = 1600) {
   return renderStrokesToDataURL(state.strokes, maxDimension);
 }
 
-// ============================================================================
-// CONTROLES DE MÚLTIPLAS PÁGINAS NA LOUSA
-// ============================================================================
 export function updatePageIndicatorUI() {
   const ind = document.getElementById('canvas-page-indicator');
   if (ind) {
@@ -478,9 +501,6 @@ export function nextCanvasPage() {
   }
 }
 
-// ============================================================================
-// FERRAMENTAS
-// ============================================================================
 export function selectTool(tool, color) {
   state.tool = tool;
   state.color = color;

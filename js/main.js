@@ -104,11 +104,11 @@ function setAppMode(mode, { preservePaper = false } = {}) {
   persistPrefs();
 
   document.querySelectorAll('.mode-tab').forEach((btn) => {
-    btn.className = 'mode-tab px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900';
+    btn.className = 'mode-tab px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900';
   });
   const active = document.getElementById(`tab-${mode}`);
   if (active) {
-    active.className = 'mode-tab px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap bg-white dark:bg-slate-700 text-blue-800 dark:text-blue-300 shadow-sm';
+    active.className = 'mode-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 whitespace-nowrap bg-white dark:bg-slate-700 text-blue-800 dark:text-blue-300 shadow-sm';
   }
 
   document.getElementById('aulas-filters')?.classList.toggle('hidden', mode !== 'aulas');
@@ -122,22 +122,22 @@ function setAppMode(mode, { preservePaper = false } = {}) {
   const pDesc = document.getElementById('placeholder-desc');
 
   if (mode === 'aulas') {
-    actionBtn.className = 'pointer-events-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-900 via-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-600 text-white font-bold text-xs sm:text-sm shadow-xl flex items-center gap-2 transition-all active:scale-95';
-    actionLabel.textContent = 'Analisar Minhas Anotações S Pen';
+    actionBtn.className = 'px-4 py-2 rounded-xl bg-gradient-to-r from-blue-900 via-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-600 text-white font-bold text-xs sm:text-sm shadow-md flex items-center gap-1.5 transition-all active:scale-95';
+    actionLabel.textContent = 'Analisar Anotações S Pen';
     pTitle.textContent = 'Caderno de Anotações & Esquemas S Pen';
     pDesc.textContent = 'Anote os pontos da história, crie mapas mentais ou resolva o exercício com a S Pen.';
     renderStoryLessonView();
   } else if (mode === 'redacao') {
     if (!preservePaper) setPaperStyle('ruled');
-    actionBtn.className = 'pointer-events-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-700 via-orange-600 to-red-600 hover:from-amber-600 hover:to-red-500 text-white font-bold text-xs sm:text-sm shadow-xl flex items-center gap-2 transition-all active:scale-95';
-    actionLabel.textContent = 'Corrigir Minha Redação (Nota + Pontos a Melhorar)';
+    actionBtn.className = 'px-4 py-2 rounded-xl bg-gradient-to-r from-amber-700 via-orange-600 to-red-600 hover:from-amber-600 hover:to-red-500 text-white font-bold text-xs sm:text-sm shadow-md flex items-center gap-1.5 transition-all active:scale-95';
+    actionLabel.textContent = 'Corrigir Redação (Nota + Dicas)';
     pTitle.textContent = 'Folha Oficial de Redação Vunesp (S Pen)';
     pDesc.textContent = 'Use o roteiro ao lado para destravar suas ideias e escreva seus 4 parágrafos aqui.';
     renderGuidedRedacaoView();
   } else if (mode === 'calculadora') {
     if (!preservePaper) setPaperStyle('grid');
-    actionBtn.className = 'pointer-events-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-800 via-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-xl flex items-center gap-2 transition-all active:scale-95';
-    actionLabel.textContent = 'Calcular Fórmula / Conta Desenhada';
+    actionBtn.className = 'px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-800 via-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-md flex items-center gap-1.5 transition-all active:scale-95';
+    actionLabel.textContent = 'Calcular Fórmula Desenhada';
     pTitle.textContent = 'Lousa Calculadora Inteligente (S Pen)';
     pDesc.textContent = 'Desenhe qualquer fórmula, equação, regra de três, raiz ou porcentagem aqui. Eu calculo e explico para você!';
     renderCalculadoraGuideView();
