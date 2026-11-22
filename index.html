@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1E3A8A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Caderno TJSP" />
+  <title>TJSP 2027 - Caderno Inteligente S Pen</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            serif: ['Merriweather', 'Georgia', 'serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 h-screen w-screen overflow-hidden flex flex-col">
+
+  <!-- BARRA SUPERIOR (GALAXY TAB S10 + S PEN) -->
+  <header class="h-14 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 lg:px-5 flex items-center justify-between gap-2 shadow-sm z-30">
+    <!-- Marca -->
+    <div class="flex items-center gap-2.5 shrink-0">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-900 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+        </svg>
+      </div>
+      <div class="hidden sm:block">
+        <div class="flex items-center gap-1.5">
+          <h1 class="font-bold text-sm lg:text-base tracking-tight text-slate-900 dark:text-white leading-none">TJSP 2027</h1>
+          <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Histórias + S Pen</span>
+        </div>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Escrevente Técnico Judiciário</p>
+      </div>
+    </div>
+
+    <!-- Navegação Principal dos 3 Pilares -->
+    <nav class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/70 dark:border-slate-700 overflow-x-auto max-w-full">
+      <button onclick="setAppMode('aulas')" id="tab-aulas" class="mode-tab px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap bg-white dark:bg-slate-700 text-blue-800 dark:text-blue-300 shadow-sm">
+        <span>📖 Aulas por Histórias</span>
+      </button>
+      <button onclick="setAppMode('redacao')" id="tab-redacao" class="mode-tab px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900">
+        <span>✍️ Redação Guiada</span>
+      </button>
+      <button onclick="setAppMode('calculadora')" id="tab-calculadora" class="mode-tab px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap text-slate-600 dark:text-slate-300 hover:text-slate-900">
+        <span>🧮 Calculadora S Pen</span>
+      </button>
+    </nav>
+
+    <!-- Controles Direitos -->
+    <div class="flex items-center gap-1.5 lg:gap-2 shrink-0">
+      <button onclick="installPWA()" id="btn-install-pwa" title="Instalar aplicativo no Tablet" class="hidden px-2.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1 transition-all">
+        <span>📲</span>
+        <span class="hidden md:inline">Instalar App</span>
+      </button>
+
+      <!-- Cronômetro Simulado / Redação -->
+      <div class="hidden md:flex items-center gap-1 px-2 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono">
+        <span title="Cronômetro de Estudo/Redação">⏱️</span>
+        <span id="study-timer-display" class="font-bold text-slate-700 dark:text-slate-200">00:00</span>
+        <button onclick="toggleStudyTimer()" id="btn-timer-toggle" title="Iniciar / Pausar Cronômetro" class="px-1 hover:text-blue-600">
+          <span id="timer-play-icon">▶</span>
+        </button>
+        <button onclick="resetStudyTimer()" title="Zerar Cronômetro" class="px-1 text-slate-400 hover:text-red-500">↺</button>
+      </div>
+
+      <button onclick="togglePalmRejection()" id="btn-palm-rejection" title="Alternar entre Somente S Pen (Rejeição de Palma) e Caneta + Dedo" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/60 dark:border-blue-800 dark:text-blue-300">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+        <span id="palm-label" class="hidden md:inline">Somente S Pen</span>
+      </button>
+
+      <button onclick="openAnalyticsModal()" title="Ver Análise de Erros, Revisões e Chance de Passar em Março" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800/70 text-xs font-semibold text-emerald-800 dark:text-emerald-300 transition-all">
+        <span>📊</span>
+        <span class="hidden lg:inline">Desempenho:</span>
+        <span id="score-counter">0/0</span>
+      </button>
+
+      <button onclick="openSourcesModal()" title="Fontes de Estudo Locais conectadas à IA" class="relative px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5 transition-all">
+        <span>📚</span>
+        <span class="hidden sm:inline">Fontes IA</span>
+        <span id="sources-badge" class="px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-600 text-white font-bold">0</span>
+      </button>
+
+      <button onclick="openSavedDrawer()" class="relative px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-300 flex items-center gap-1.5 transition-all">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"/></svg>
+        <span class="hidden sm:inline">Meu Caderno</span>
+        <span id="saved-badge" class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-600 text-white font-bold">0</span>
+      </button>
+
+      <button onclick="openSettingsModal()" title="Configurações da IA Gemini e Backup Local" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </button>
+
+      <button onclick="toggleDarkMode()" title="Alternar Modo Claro / Noturno" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors">
+        <svg id="icon-moon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
+        <svg id="icon-sun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ÁREA PRINCIPAL SPLIT-SCREEN (OTIMIZADA PARA GALAXY TAB S10 12") -->
+  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+
+    <!-- PAINEL ESQUERDO -->
+    <section id="left-pane" class="w-full lg:w-[46%] xl:w-[44%] h-[48%] lg:h-full flex flex-col bg-white dark:bg-slate-900 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 shrink-0">
+
+      <!-- Sub-barra de filtros -->
+      <div id="left-subbar" class="px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 shrink-0">
+        <div id="aulas-filters" class="flex items-center gap-1.5 overflow-x-auto w-full">
+          <button onclick="selectStoryDiscipline('todas')" data-disc="todas" class="disc-pill px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-800 text-white whitespace-nowrap flex items-center gap-1">Todas as Histórias</button>
+          <button onclick="selectStoryDiscipline('revisar')" data-disc="revisar" class="disc-pill px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap flex items-center gap-1">
+            <span>🔁 Revisar Hoje</span>
+            <span id="srs-due-badge" class="hidden px-1.5 py-0.2 rounded-full text-[10px] bg-red-600 text-white font-bold">0</span>
+          </button>
+          <button onclick="selectStoryDiscipline('direito')" data-disc="direito" class="disc-pill px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Direito & Normas</button>
+          <button onclick="selectStoryDiscipline('portugues')" data-disc="portugues" class="disc-pill px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Português</button>
+          <button onclick="selectStoryDiscipline('matematica')" data-disc="matematica" class="disc-pill px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Matemática & RLM</button>
+          <button onclick="selectStoryDiscipline('informatica')" data-disc="informatica" class="disc-pill px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">Excel 365</button>
+        </div>
+
+        <div id="redacao-filters" class="hidden flex items-center justify-between w-full">
+          <span class="text-xs font-bold text-blue-900 dark:text-blue-300">Oficina Anti-Bloqueio de Redação (Vunesp)</span>
+          <button onclick="nextEssayTopic()" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:text-blue-300 text-blue-900 transition-colors">Outro Tema →</button>
+        </div>
+
+        <div id="calculadora-filters" class="hidden flex items-center justify-between w-full">
+          <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300">🧮 Calculadora Inteligente Manuscrita (S Pen)</span>
+          <span class="text-[11px] text-slate-500">Desenhe contas ou fórmulas na lousa</span>
+        </div>
+      </div>
+
+      <!-- ÁREA SCROLLÁVEL DO PAINEL ESQUERDO -->
+      <div id="left-content-scroll" class="flex-1 overflow-y-auto p-4 lg:p-5 space-y-4 selectable-text"></div>
+
+      <!-- RODAPÉ DO PAINEL ESQUERDO -->
+      <div class="p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
+        <form onsubmit="handleCustomStoryOrQuestion(event)" class="flex items-center gap-2">
+          <input
+            type="text"
+            id="quick-chat-input"
+            placeholder="Peça uma história sobre qualquer tema (ex: Crase, PROCV, eproc, Pitágoras)..."
+            class="flex-1 text-xs lg:text-sm px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-800 dark:text-slate-100 placeholder-slate-400"
+          />
+          <button type="submit" id="btn-quick-send" class="px-3.5 py-2.5 rounded-xl bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all shrink-0">
+            <span>Criar Aula</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- PAINEL DIREITO: LOUSA S PEN INTERATIVA -->
+    <section id="right-pane" class="flex-1 h-[52%] lg:h-full flex flex-col relative overflow-hidden bg-paper-grid">
+
+      <!-- BARRA FLUTUANTE DA S PEN -->
+      <div class="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <div class="pointer-events-auto flex items-center gap-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-2 py-1.5 rounded-2xl shadow-lg border border-slate-200/80 dark:border-slate-700/80">
+          <button onclick="selectTool('pen', '#1E293B')" id="tool-pen-black" title="Caneta Preta" class="tool-btn p-2 rounded-xl transition-all ring-2 ring-blue-600 bg-blue-50 dark:bg-blue-950">
+            <span class="block w-4 h-4 rounded-full bg-slate-900 dark:bg-slate-100 border border-slate-400"></span>
+          </button>
+          <button onclick="selectTool('pen', '#1D4ED8')" id="tool-pen-blue" title="Caneta Azul" class="tool-btn p-2 rounded-xl transition-all hover:bg-slate-100 dark:hover:bg-slate-800">
+            <span class="block w-4 h-4 rounded-full bg-blue-700"></span>
+          </button>
+          <button onclick="selectTool('pen', '#DC2626')" id="tool-pen-red" title="Caneta Vermelha" class="tool-btn p-2 rounded-xl transition-all hover:bg-slate-100 dark:hover:bg-slate-800">
+            <span class="block w-4 h-4 rounded-full bg-red-600"></span>
+          </button>
+          <button onclick="selectTool('highlighter', 'rgba(250, 204, 21, 0.38)')" id="tool-highlighter" title="Marca-Texto" class="tool-btn p-2 rounded-xl transition-all hover:bg-slate-100 dark:hover:bg-slate-800 text-amber-500">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M15.243 4.515l4.242 4.242-9.9 9.9H5.343v-4.242l9.9-9.9zm1.414-1.414l1.414-1.414a1 1 0 011.414 0l2.829 2.828a1 1 0 010 1.415l-1.414 1.414-4.243-4.243zM3 20h18v2H3v-2z"/></svg>
+          </button>
+          <button onclick="selectTool('eraser', '#000000')" id="tool-eraser" title="Borracha (ou segure o botão da S Pen)" class="tool-btn p-2 rounded-xl transition-all hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8l10-10c.8-.8 2-.8 2.8 0l5.4 5.4c.8.8.8 2 0 2.8L13 19.6"/></svg>
+          </button>
+
+          <div class="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-0.5"></div>
+
+          <select id="stroke-width-select" onchange="changeBaseWidth(this.value)" title="Espessura" class="text-xs font-semibold bg-transparent text-slate-700 dark:text-slate-200 px-1.5 py-1 rounded-lg focus:outline-none">
+            <option value="1.8">Fina</option>
+            <option value="2.8" selected>Média</option>
+            <option value="4.5">Grossa</option>
+          </select>
+
+          <div class="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-0.5"></div>
+
+          <button onclick="undoCanvas()" title="Desfazer" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>
+          </button>
+          <button onclick="redoCanvas()" title="Refazer" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3"/></svg>
+          </button>
+          <button onclick="clearCanvasConfirm()" title="Limpar página atual" class="p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+          </button>
+        </div>
+
+        <!-- Controles Direitos da Lousa: Páginas, Zoom, Papel, PDF, Guardar -->
+        <div class="pointer-events-auto flex items-center gap-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-2.5 py-1.5 rounded-2xl shadow-lg border border-slate-200/80 dark:border-slate-700/80">
+          <!-- Paginação -->
+          <div class="flex items-center gap-0.5 text-xs font-semibold">
+            <button onclick="prevCanvasPage()" title="Página anterior" class="px-1.5 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">‹</button>
+            <span id="canvas-page-indicator" class="px-1 text-[11px] font-mono text-slate-700 dark:text-slate-200">Pág 1/1</span>
+            <button onclick="nextCanvasPage()" title="Próxima / Nova página" class="px-1.5 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">›</button>
+            <button onclick="addCanvasPage()" title="Adicionar Nova Página" class="px-1.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-blue-700 dark:text-blue-300 font-bold">+</button>
+          </div>
+
+          <div class="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
+
+          <!-- Reset Zoom -->
+          <button onclick="resetCanvasZoom()" title="Redefinir Zoom (100%)" class="px-1.5 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-[11px] font-mono font-semibold text-slate-600 dark:text-slate-300">
+            <span id="zoom-indicator">100%</span>
+          </button>
+
+          <div class="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
+
+          <select id="paper-style-select" onchange="setPaperStyle(this.value)" title="Tipo de Folha" class="text-xs font-semibold bg-transparent text-slate-700 dark:text-slate-200 focus:outline-none">
+            <option value="grid">Quadriculado</option>
+            <option value="ruled">Pautado</option>
+            <option value="dotted">Pontilhado</option>
+            <option value="blank">Lisa</option>
+          </select>
+
+          <button onclick="exportNotebookPDF()" title="Exportar páginas e análise em PDF" class="px-2 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all">
+            PDF
+          </button>
+
+          <button onclick="saveCurrentPage()" title="Guardar no Meu Caderno" class="px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold flex items-center gap-1 shadow-sm transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"/></svg>
+            <span class="hidden sm:inline">Guardar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- VISOR FLUTUANTE DO RESULTADO DA CALCULADORA INTELIGENTE -->
+      <div id="calc-result-banner" class="hidden absolute top-16 left-4 right-4 z-20 bg-emerald-950/95 text-white backdrop-blur-md rounded-2xl p-3.5 shadow-xl border border-emerald-500/40 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Expressão Reconhecida da sua S Pen</div>
+          <div id="calc-recognized-expr" class="font-mono text-xs sm:text-sm text-emerald-100 truncate">Aguardando cálculo...</div>
+        </div>
+        <div class="text-right shrink-0 bg-emerald-900/90 px-3.5 py-1.5 rounded-xl border border-emerald-400/30">
+          <div class="text-[10px] uppercase tracking-wider text-emerald-300 font-semibold">Resultado</div>
+          <div id="calc-final-answer" class="font-mono text-lg sm:text-xl font-extrabold text-amber-300">—</div>
+        </div>
+      </div>
+
+      <!-- CANVAS S PEN NATIVO -->
+      <div id="canvas-wrapper" class="flex-1 w-full h-full relative">
+        <canvas id="spen-canvas" class="w-full h-full block"></canvas>
+
+        <!-- Orientação S Pen -->
+        <div id="canvas-placeholder" class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center p-6 opacity-50">
+          <div class="w-12 h-12 rounded-2xl bg-slate-200/80 dark:bg-slate-800/80 flex items-center justify-center mb-2 text-slate-600 dark:text-slate-300">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/></svg>
+          </div>
+          <p id="placeholder-title" class="text-sm font-bold text-slate-700 dark:text-slate-200">Caderno de Anotações & Rascunhos S Pen</p>
+          <p id="placeholder-desc" class="text-xs text-slate-500 dark:text-slate-400 max-w-xs mt-1">Anote suas ideias da história, faça esquemas ou resolva o desafio com a S Pen.</p>
+        </div>
+      </div>
+
+      <!-- BARRA INFERIOR DE AÇÃO DA IA -->
+      <div class="absolute bottom-4 right-4 left-4 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <div class="pointer-events-auto flex items-center gap-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 text-xs">
+          <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+            <input type="checkbox" id="auto-analyze-toggle" class="rounded text-blue-600 focus:ring-blue-500" />
+            <span>Auto-analisar (3s)</span>
+          </label>
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        </div>
+
+        <div class="pointer-events-auto flex items-center gap-2">
+          <button onclick="convertHandwritingToAlignedText()" id="btn-handwriting-to-text" title="Converter escrita da S Pen em texto digitado e alinhado" class="px-3.5 py-3 rounded-2xl bg-white/95 hover:bg-slate-100 dark:bg-slate-900/95 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs shadow-lg border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all active:scale-95">
+            <span>🔤</span>
+            <span class="hidden sm:inline">S Pen → Texto Alinhado</span>
+          </button>
+
+          <button onclick="analyzeHandwritingWithAI()" id="btn-analyze-ai" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-900 via-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-600 text-white font-bold text-xs sm:text-sm shadow-xl shadow-blue-900/25 flex items-center gap-2 transition-all active:scale-95">
+            <svg class="w-5 h-5 text-amber-300" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+            <span id="btn-analyze-label">Corrigir / Explicar Minha Escrita</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- GAVETA DE RESPOSTA DETALHADA DA IA -->
+      <div id="ai-feedback-panel" class="hidden absolute inset-x-3 bottom-16 z-30 max-h-[65%] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-blue-200 dark:border-blue-800 flex flex-col overflow-hidden transition-all">
+        <div class="px-4 py-2.5 bg-gradient-to-r from-blue-900 to-indigo-800 text-white flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <h3 id="ai-panel-title" class="text-xs sm:text-sm font-bold tracking-wide">Tutor IA TJSP • Análise Detalhada</h3>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="saveCurrentPage(true)" class="text-[11px] bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg font-semibold transition-colors">Guardar no Caderno</button>
+            <button onclick="closeAIFeedback()" class="p-1 rounded-lg hover:bg-white/20 transition-colors" title="Fechar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+        <div id="ai-feedback-body" class="p-4 overflow-y-auto text-xs sm:text-sm text-slate-700 dark:text-slate-200 ai-markdown selectable-text">
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- DRAWER: MEU CADERNO SALVO -->
+  <div id="saved-drawer-backdrop" onclick="closeSavedDrawer()" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-40"></div>
+  <aside id="saved-drawer" class="fixed top-0 right-0 h-full w-full sm:w-[440px] bg-white dark:bg-slate-900 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col border-l border-slate-200 dark:border-slate-800">
+    <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900">
+      <div>
+        <h2 class="font-bold text-base text-slate-900 dark:text-white">Meu Caderno de Conhecimento</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Salvo localmente no seu tablet (IndexedDB)</p>
+      </div>
+      <button onclick="closeSavedDrawer()" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="saved-pages-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+  </aside>
+
+  <!-- MODAL TEXTO ALINHADO (S PEN -> TECLADO) -->
+  <div id="aligned-text-modal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">🔤 Escrita S Pen Convertida em Texto Alinhado</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Edite, copie ou envie para as anotações da aula.</p>
+        </div>
+        <button onclick="closeAlignedTextModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">✕</button>
+      </div>
+      <textarea id="aligned-text-output" rows="10" class="w-full text-sm font-serif leading-relaxed p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 selectable-text"></textarea>
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <button onclick="downloadAlignedText()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200">Baixar .txt</button>
+        <button onclick="copyAlignedText()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 text-blue-900 dark:text-blue-200">Copiar Texto</button>
+        <button onclick="sendAlignedTextToNotes()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-800 hover:bg-blue-700 text-white">Salvar nas Anotações da Aula</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ANÁLISE DE DESEMPENHO & CHANCE DE APROVAÇÃO -->
+  <div id="analytics-modal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+      <div class="flex items-center justify-between shrink-0">
+        <div>
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">📊 Análise de Desempenho & Chance em Março</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Acertos, erros, revisões periódicas (SRS) e reforço inteligente nos pontos fracos</p>
+        </div>
+        <button onclick="closeAnalyticsModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">✕</button>
+      </div>
+      <div id="analytics-body" class="flex-1 overflow-y-auto space-y-4 pr-1"></div>
+    </div>
+  </div>
+
+  <!-- MODAL FONTES DE ESTUDO LOCAIS (BASE DE CONHECIMENTO IA) -->
+  <div id="sources-modal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full max-h-[88vh] flex flex-col p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+      <div class="flex items-center justify-between shrink-0">
+        <div>
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">📚 Fontes Locais Conectadas à IA</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Salvas no seu tablet (IndexedDB). O Gemini consulta estas fontes e suas anotações automaticamente.</p>
+        </div>
+        <button onclick="closeSourcesModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">✕</button>
+      </div>
+
+      <div class="shrink-0">
+        <label class="block w-full py-2.5 px-3 rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-700 bg-indigo-50/60 dark:bg-indigo-950/30 text-center text-xs font-semibold text-indigo-800 dark:text-indigo-300 cursor-pointer hover:bg-indigo-100/60 transition-colors">
+          📄 Enviar arquivos do tablet (.txt, .md, .csv)
+          <input type="file" multiple accept=".txt,.md,.csv,.json" onchange="uploadStudySourceFiles(event)" class="hidden" />
+        </label>
+      </div>
+
+      <form onsubmit="addManualStudySource(event)" class="space-y-2 shrink-0 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+        <input id="source-title-input" type="text" placeholder="Título da fonte (ex: Normas da Corregedoria - Art. 1º a 50)" class="w-full text-xs px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600" />
+        <textarea id="source-content-input" rows="3" placeholder="Cole aqui artigos de lei, resumos, súmulas ou trechos de apostila..." class="w-full text-xs px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"></textarea>
+        <button type="submit" class="w-full py-2 rounded-lg text-xs font-bold bg-indigo-700 hover:bg-indigo-600 text-white transition-colors">+ Salvar Fonte no Tablet</button>
+      </form>
+
+      <div id="sources-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIGURAÇÕES & BACKUP -->
+  <div id="settings-modal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">⚙️ Configurações & Backup Local</h3>
+        <button onclick="closeSettingsModal()" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">✕</button>
+      </div>
+
+      <form onsubmit="saveSettingsForm(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Chave de API do Gemini (Salva só no seu aparelho)</label>
+          <input id="settings-api-key" type="password" autocomplete="off" placeholder="Cole sua chave Gemini (AQ... ou AIza...)" class="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Modelo Gemini</label>
+          <select id="settings-model" class="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600">
+            <option value="gemini-3-flash-preview">Gemini 3 Flash Preview (Recomendado)</option>
+            <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+            <option value="gemini-flash-latest">Gemini Flash Latest</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Análise Profunda)</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full py-2 rounded-xl text-xs font-bold bg-blue-800 hover:bg-blue-700 text-white transition-colors">Salvar Configurações da IA</button>
+      </form>
+
+      <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+        <p class="text-xs font-bold text-slate-700 dark:text-slate-300">📦 Backup do Tablet (Páginas, Aulas IA e Notas)</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="exportLocalBackup()" type="button" class="py-2 px-3 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors">Exportar Backup (.json)</button>
+          <label class="py-2 px-3 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-center cursor-pointer transition-colors">
+            Importar Backup
+            <input type="file" accept="application/json" onchange="importLocalBackup(event)" class="hidden" />
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAÇÃO LIMPAR LOUSA -->
+  <div id="clear-modal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-800">
+      <h3 class="font-bold text-base text-slate-900 dark:text-white">Apagar a página atual da lousa?</h3>
+      <p class="text-xs text-slate-600 dark:text-slate-400 mt-1.5">Você pode clicar em "Guardar" antes se quiser salvar seus traços no caderno.</p>
+      <div class="mt-4 flex items-center justify-end gap-2">
+        <button onclick="closeClearModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Cancelar</button>
+        <button onclick="confirmClearCanvas()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-700 text-white">Apagar Página</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast-banner" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold shadow-lg"></div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

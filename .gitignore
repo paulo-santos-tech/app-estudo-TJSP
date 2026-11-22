@@ -1,0 +1,6 @@
+.DS_Store
+Thumbs.db
+node_modules/
+.env
+*.log
+tjsp_2027_caderno_inteligente_s_pen.html

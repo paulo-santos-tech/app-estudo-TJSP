@@ -1,0 +1,135 @@
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.selectable-text {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Bloqueia gestos do navegador e menu de contexto na lousa da S Pen */
+#spen-canvas {
+  touch-action: none;
+  cursor: crosshair;
+  -webkit-touch-callout: none;
+}
+
+/* Padrões de fundo do papel digital */
+.bg-paper-grid {
+  background-color: #FDFBF7;
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.24) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.24) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.dark .bg-paper-grid {
+  background-color: #12151E;
+  background-image:
+    linear-gradient(to right, rgba(71, 85, 105, 0.24) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(71, 85, 105, 0.24) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.bg-paper-ruled {
+  background-color: #FDFBF7;
+  background-image:
+    linear-gradient(90deg, transparent 52px, rgba(239, 68, 68, 0.35) 52px, rgba(239, 68, 68, 0.35) 54px, transparent 54px),
+    linear-gradient(to bottom, transparent 35px, rgba(59, 130, 246, 0.25) 36px);
+  background-size: 100% 36px;
+}
+.dark .bg-paper-ruled {
+  background-color: #12151E;
+  background-image:
+    linear-gradient(90deg, transparent 52px, rgba(248, 113, 113, 0.25) 52px, rgba(248, 113, 113, 0.25) 54px, transparent 54px),
+    linear-gradient(to bottom, transparent 35px, rgba(96, 165, 250, 0.18) 36px);
+  background-size: 100% 36px;
+}
+
+.bg-paper-dotted {
+  background-color: #FDFBF7;
+  background-image: radial-gradient(rgba(100, 116, 139, 0.38) 1.3px, transparent 1.3px);
+  background-size: 24px 24px;
+}
+.dark .bg-paper-dotted {
+  background-color: #12151E;
+  background-image: radial-gradient(rgba(148, 163, 184, 0.25) 1.3px, transparent 1.3px);
+  background-size: 24px 24px;
+}
+
+.bg-paper-blank {
+  background-color: #FDFBF7;
+}
+.dark .bg-paper-blank {
+  background-color: #12151E;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+/* Formatação Markdown das respostas da IA */
+.ai-markdown h3 {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.35rem;
+  color: #1E3A8A;
+}
+.dark .ai-markdown h3 {
+  color: #93C5FD;
+}
+.ai-markdown p {
+  margin-bottom: 0.55rem;
+  line-height: 1.6;
+}
+.ai-markdown ul,
+.ai-markdown ol {
+  padding-left: 1.25rem;
+  margin-bottom: 0.65rem;
+}
+.ai-markdown ul {
+  list-style-type: disc;
+}
+.ai-markdown ol {
+  list-style-type: decimal;
+}
+.ai-markdown li {
+  margin-bottom: 0.3rem;
+}
+.ai-markdown strong {
+  font-weight: 700;
+}
+.ai-markdown code {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(148, 163, 184, 0.2);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.ai-markdown pre {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(15, 23, 42, 0.08);
+  padding: 0.65rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 0.65rem;
+  font-size: 0.82em;
+}
+.dark .ai-markdown pre {
+  background: rgba(15, 23, 42, 0.6);
+}
